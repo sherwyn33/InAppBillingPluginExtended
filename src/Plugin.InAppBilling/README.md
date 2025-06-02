@@ -5,10 +5,8 @@ Since the original In-App Billing plugin is set to read only, this plugin is a f
 
 Subscriptions are supported on iOS, Android, and Mac and Windows.
 
-dotnet add package Plugin.InAppBilling.Extended --version 9.0.0
-
 ## Important Version Information
-* v9 Forked version now supports Windows subscriptions. ConsumePurchaseAsync now requires a quantity argument.
+* Forked version now supports Windows subscriptions. ConsumePurchaseAsync now requires a quantity argument.
 * v8 now supports .NET 8+ .NET MAUI and Windows Apps.
 * v7 now supports .NET 6+, .NET MAUI, UWP, and Xamarin/Xamarin.Forms projects
 * v7 is built against Android Billing Library 6.0
