@@ -12,7 +12,7 @@
     <AssemblyVersion>7.0.0.0</AssemblyVersion>
     <AssemblyFileVersion>7.0.0.0</AssemblyFileVersion>
     <Version>7.0.0.0</Version>
-    <Authors>James Montemagno</Authors>
+    <Authors>James Montemagno, Sherwyn33</Authors>
     <IsPackable>True</IsPackable>
     <PackageId>Plugin.InAppBilling</PackageId>
     <PackOnBuild>true</PackOnBuild>
@@ -21,18 +21,19 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Owners>JamesMontemagno</Owners>
-    <PackageProjectUrl>https://github.com/jamesmontemagno/InAppBillingPlugin</PackageProjectUrl>
+    <Owners>Sherwyn33</Owners>
+    <PackageProjectUrl>https://github.com/Sherwyn33/InAppBillingPlugin</PackageProjectUrl>
     <Summary>.NET MAUI, and Windows plugin to In-App Billing.</Summary>
-    <PackageTags>.net maui, macos, windows, xamarin, xamarin.forms, android, ios, uwp, windows phone, In-App Billing, purchases, plugin</PackageTags>
+    <PackageTags>.net maui, macos, windows, xamarin, xamarin.forms, android, ios, wasdk, windows phone, In-App Billing, purchases, plugin</PackageTags>
     <Title>In-App Billing Plugin for .NET MAUI and Windows</Title>
     <Description>
       .NET MAUI and Windows Plugin to In-App Billing. Get item information, purchase items, and restore purchases with a cross-platform API.
       Read the full documenation on the projects page.
+      Since the original In-App Billing plugin is no longer maintained, this plugin is a fork to enable windows subscription support and to keep the plugin up to date.
     </Description>
     <Copyright>Copyright 2024</Copyright>
-    <RepositoryUrl>https://github.com/jamesmontemagno/InAppBillingPlugin</RepositoryUrl>
-    <PackageReleaseNotes>See: https://github.com/jamesmontemagno/InAppBillingPlugin</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/Sherwyn33/InAppBillingPlugin</RepositoryUrl>
+    <PackageReleaseNotes>See: https://github.com/Sherwyn33/InAppBillingPlugin</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <NeutralLanguage>en</NeutralLanguage>
@@ -48,18 +49,20 @@
     <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('maccatalyst'))">14.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('macos'))">13.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('android'))">21.0</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('windows'))">10.0.17763.0</SupportedOSPlatformVersion>
-    <TargetPlatformMinVersion Condition="$(TargetFramework.Contains('windows'))">10.0.17763.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('windows'))">10.0.19041.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$(TargetFramework.Contains('windows'))">10.0.19041.0</TargetPlatformMinVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)'=='Debug' ">
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+      <Optimize>false</Optimize>
+      <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)'=='Release' ">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DebugType>portable</DebugType>
+    <DebugType>none</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)'=='Release' AND $([MSBuild]::IsOSPlatform('windows')) ">
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -70,12 +73,10 @@
   
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.100" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\..\nuget\readme.txt" PackagePath="readme.txt" Pack="true" />
-    <!--<Compile Include="**\*.shared.cs" />-->
-  </ItemGroup>
 
   <!-- iOS & MacCatalyst -->
   <ItemGroup Condition="$(TargetFramework.StartsWith('net')) == true AND $(TargetFramework.Contains('-ios')) != true">
@@ -143,8 +144,8 @@
   </ItemGroup>
   <!-- Windows -->
   <ItemGroup Condition="$(TargetFramework.StartsWith('net')) == true AND $(TargetFramework.Contains('-windows')) != true">
-    <Compile Remove="**\*.uwp.cs" />
-    <None Include="**\*.uwp.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+    <Compile Remove="**\*.wasdk.cs" />
+    <None Include="**\*.wasdk.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
   </ItemGroup>
   <!-- .NET (generic) -->
   <ItemGroup Condition="!($(TargetFramework.StartsWith('net')) == true AND $(TargetFramework.EndsWith('.0')) == true AND $(TargetFramework.Contains('-')) != true)">
@@ -154,7 +155,7 @@
   </ItemGroup>
   
   <!--<ItemGroup Condition=" $(TargetFramework.Contains('-windows')) ">
-    <Compile Include="**\*.uwp.cs" />
+    <Compile Include="**\*.wasdk.cs" />
   </ItemGroup>
   
   <ItemGroup Condition=" $(TargetFramework.Contains('-android')) ">
@@ -177,9 +178,5 @@
   </ItemGroup>-->
 
   <!-- Package additions -->
-  <ItemGroup>
-    <None Include="..\..\art\icon.png" PackagePath="icon.png" Pack="true" />
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
 </Project>
