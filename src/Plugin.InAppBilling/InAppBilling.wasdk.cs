@@ -235,7 +235,7 @@ namespace Plugin.InAppBilling
         {
             return new InAppBillingPurchase
             {
-                ProductId = license.InAppOfferToken,
+                ProductId = license.SkuStoreId,
                 State = license.IsActive ? PurchaseState.Purchased : PurchaseState.Unknown,
                 ExpirationDate = license.ExpirationDate,
                 OriginalJson = license.ExtendedJsonData
