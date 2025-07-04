@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net8.0-android;net8.0-ios;net8.0-maccatalyst;net8.0-macos;net9.0;net9.0-android;net9.0-ios;net9.0-maccatalyst;net9.0-macos</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFrameworks>net9.0;net9.0-android;net9.0-ios;net9.0-maccatalyst;net9.0-macos</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <SingleProject>true</SingleProject>
     <AssemblyName>Plugin.InAppBilling</AssemblyName>
@@ -20,6 +20,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Owners>JamesMontemagno</Owners>
+    <NoWarn>CA1422;CA1416</NoWarn>
     <PackageProjectUrl>https://github.com/jamesmontemagno/InAppBillingPlugin</PackageProjectUrl>
     <Summary>.NET MAUI, and Windows plugin to In-App Billing.</Summary>
     <PackageTags>.net maui, macos, windows, xamarin, xamarin.forms, android, ios, uwp, windows phone, In-App Billing, purchases, plugin</PackageTags>
@@ -92,18 +93,15 @@
   <!-- Android -->
 
   <ItemGroup Condition=" $(TargetFramework.Contains('-android')) ">
-    <PackageReference Include="Xamarin.Android.Google.BillingClient" Version="7.1.1.1" />
+    <PackageReference Include="Xamarin.Android.Google.BillingClient" Version="7.1.1.4" />
   <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core">
-    <Version>2.8.7.1</Version>
+    <Version>2.8.7.4</Version>
   </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition=" $(TargetFramework.Contains('net8.0-android')) ">
-    <PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.100" />
-  </ItemGroup>
 
 <ItemGroup Condition=" $(TargetFramework.Contains('net9.0-android')) ">
-    <PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.81" />
   </ItemGroup>
 
   
