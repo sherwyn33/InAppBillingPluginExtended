@@ -1,5 +1,8 @@
 In-App Billing Plugin for .NET MAUI
 
+Version 9.0+ - .NET 9+
+1. Built against Android Billing v7
+
 Version 8.0+ - .NET 8+
 1. Updated APIs and you must target .NET 8
 
