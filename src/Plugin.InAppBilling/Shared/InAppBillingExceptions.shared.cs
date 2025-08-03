@@ -71,8 +71,9 @@ namespace Plugin.InAppBilling
         ServiceDisconnected,
         ServiceTimeout,
         AppleTermsConditionsChanged,
-        InsufficentQuantity
-	}
+        InsufficentQuantity,
+        NetworkError
+    }
 
     /// <summary>
     /// Purchase exception
