@@ -7,9 +7,9 @@
     <AssemblyName>Plugin.InAppBilling</AssemblyName>
     <RootNamespace>Plugin.InAppBilling</RootNamespace>
     <Product>$(AssemblyName) ($(TargetFramework))</Product>
-    <AssemblyVersion>9.0.1.0</AssemblyVersion>
-    <AssemblyFileVersion>9.0.1.0</AssemblyFileVersion>
-    <Version>9.0.1.0</Version>
+    <AssemblyVersion>9.1.0.0</AssemblyVersion>
+    <AssemblyFileVersion>9.1.0.0</AssemblyFileVersion>
+    <Version>9.1.0.0</Version>
     <Authors>James Montemagno, Sherwyn33</Authors>
     <IsPackable>True</IsPackable>
     <PackageId>Plugin.InAppBilling.Extended</PackageId>
@@ -76,7 +76,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.100" />
+    <!-- Removed duplicate Microsoft.Maui.Essentials 8.0.100 reference -->
   </ItemGroup>
 
 
@@ -125,28 +125,5 @@
     <None Include="**\*.net.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
   </ItemGroup>
   
-  <!--<ItemGroup Condition=" $(TargetFramework.Contains('-windows')) ">
-    <Compile Include="**\*.wasdk.cs" />
-  </ItemGroup>
-  
-  <ItemGroup Condition=" $(TargetFramework.Contains('-android')) ">
-    <Compile Include="**\*.android.cs" />
-    <PackageReference Include="Microsoft.Maui.Essentials" Version="$(MauiVersion)" />
-    <PackageReference Include="Xamarin.Android.Google.BillingClient" Version="6.2.1" />
-    --><!--<PackageReference Include="Xamarin.Google.Guava.ListenableFuture" Version="1.0.0.19"/>--><!--
-  </ItemGroup>
-
-  <ItemGroup Condition=" $(TargetFramework.Contains('-ios')) ">
-    <Compile Include="**\*.apple.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" $(TargetFramework.Contains('-mac')) ">
-    <Compile Include="**\*.apple.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" $(TargetFramework.Contains('-tvos')) ">
-    <Compile Include="**\*.apple.cs" />
-  </ItemGroup>-->
-
-  <!-- Package additions -->
+ 
 </Project>

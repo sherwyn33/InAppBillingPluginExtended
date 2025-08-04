@@ -7,6 +7,7 @@ Subscriptions are supported on iOS, Android, and Mac and Windows.
 
 ## Important Version Information
 * Forked version now supports Windows subscriptions. ConsumePurchaseAsync now requires a quantity argument.
+* v9 now supports .NET 9+ and Android Billing v7
 * v8 now supports .NET 8+ .NET MAUI and Windows Apps.
 * v7 now supports .NET 6+, .NET MAUI, UWP, and Xamarin/Xamarin.Forms projects
 * v7 is built against Android Billing Library 6.0
