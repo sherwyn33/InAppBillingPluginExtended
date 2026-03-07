@@ -3,8 +3,11 @@
 A simple In-App Purchase plugin for .NET MAUI and Windows to query item information, purchase items, restore items, and more.       
 Since the original In-App Billing plugin is set to read only, this plugin is a fork to enable windows subscription support and to keep the plugin up to date.
 
+Subscriptions are supported on iOS, Android, Mac, and Windows.
+
 ## Important Version Information
-* v9 Forked version now supports Windows subscriptions. ConsumePurchaseAsync now requires a quantity argument.
+* v10 now supports .NET 10+ and Android Billing v8.
+* v9 forked version supports Windows subscriptions. `ConsumePurchaseAsync` requires a quantity argument.
 * v8 now supports .NET 8+ .NET MAUI and Windows Apps.
 * v7 now supports .NET 6+, .NET MAUI, UWP, and Xamarin/Xamarin.Forms projects
 * v7 is built against Android Billing Library 6.0
@@ -22,7 +25,6 @@ Get started by reading through the [In-App Billing Plugin documentation](https:/
 | ------------------- | :------------------: |
 |iOS for .NET|10+|
 |macCatlyst for .NET |All|
-|tvOS for .NET|10.13.2|
 |Android for .NET|21+|
 |Windows App SDK (WinUI 3) |10+|
 |.NET MAUI|All|
@@ -128,4 +130,3 @@ The MIT License (MIT), see [LICENSE](LICENSE) file.
 
 ### Want To Support This Project?
 All I have ever asked is to be active by submitting bugs, features, and sending those pull requests down! Want to go further? Make sure to subscribe to my weekly development podcast [Merge Conflict](http://mergeconflict.fm), where I talk all about awesome Xamarin goodies and you can optionally support the show by becoming a [supporter on Patreon](https://www.patreon.com/mergeconflictfm).
-

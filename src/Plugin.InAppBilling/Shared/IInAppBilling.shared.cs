@@ -77,13 +77,6 @@ namespace Plugin.InAppBilling
 
 
         /// <summary>
-        /// Android only: Returns the most recent purchase made by the user for each SKU, even if that purchase is expired, canceled, or consumed.
-        /// </summary>
-        /// <param name="itemType">Type of product</param>
-        /// <returns>The current purchases</returns>
-        Task<IEnumerable<InAppBillingPurchase>> GetPurchasesHistoryAsync(ItemType itemType, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Purchase a specific product or subscription
         /// </summary>
         /// <param name="productId">Sku or ID of product</param>

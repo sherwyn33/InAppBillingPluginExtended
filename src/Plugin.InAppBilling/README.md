@@ -6,6 +6,7 @@ Since the original In-App Billing plugin is set to read only, this plugin is a f
 Subscriptions are supported on iOS, Android, and Mac and Windows.
 
 ## Important Version Information
+* v10 now supports .NET 10+ and Android Billing v8
 * Forked version now supports Windows subscriptions. ConsumePurchaseAsync now requires a quantity argument.
 * v9 now supports .NET 9+ and Android Billing v7
 * v8 now supports .NET 8+ .NET MAUI and Windows Apps.
@@ -17,7 +18,7 @@ Subscriptions are supported on iOS, Android, and Mac and Windows.
 Get started by reading through the [In-App Billing Plugin documentation](https://jamesmontemagno.github.io/InAppBillingPlugin/).
 
 ## NuGet
-* NuGet: [Plugin.InAppBilling](https://www.nuget.org/packages/Plugin.InAppBilling) [![NuGet](https://img.shields.io/nuget/v/Plugin.InAppBilling.svg?label=NuGet)](https://www.nuget.org/packages/Plugin.InAppBilling/)
+* NuGet: [Plugin.InAppBilling.Extended](https://www.nuget.org/packages/Plugin.InAppBilling.Extended)
 
 ## Platform Support
 
@@ -25,7 +26,6 @@ Get started by reading through the [In-App Billing Plugin documentation](https:/
 | ------------------- | :------------------: |
 |iOS for .NET|10+|
 |macCatlyst for .NET |All|
-|tvOS for .NET|10.13.2|
 |Android for .NET|21+|
 |Windows App SDK (WinUI 3) |10+|
 |.NET MAUI|All|
@@ -131,4 +131,3 @@ The MIT License (MIT), see [LICENSE](LICENSE) file.
 
 ### Want To Support This Project?
 All I have ever asked is to be active by submitting bugs, features, and sending those pull requests down! Want to go further? Make sure to subscribe to my weekly development podcast [Merge Conflict](http://mergeconflict.fm), where I talk all about awesome Xamarin goodies and you can optionally support the show by becoming a [supporter on Patreon](https://www.patreon.com/mergeconflictfm).
-
