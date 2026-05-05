@@ -19,6 +19,21 @@ Get started by reading through the [In-App Billing Plugin documentation](https:/
 ## NuGet
 * NuGet: [Plugin.InAppBilling.Extended](https://www.nuget.org/packages/Plugin.InAppBilling.Extended)
 
+### Publishing
+Build and validate the NuGet package and symbol package:
+
+```bash
+scripts/publish-nuget.sh
+```
+
+Publish to NuGet.org when `NUGET_API_KEY` is available in the environment:
+
+```bash
+scripts/publish-nuget.sh --publish
+```
+
+The script never stores an API key. It only reads `NUGET_API_KEY` for the publish step, so the same command can be used locally or from CI secret storage.
+
 ## Platform Support
 
 |Platform|Version|

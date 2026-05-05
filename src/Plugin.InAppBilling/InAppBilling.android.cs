@@ -246,10 +246,12 @@ namespace Plugin.InAppBilling
             //4 - BillingFlowParams.ProrationMode.Deferred
             //5 - BillingFlowParams.ProrationMode.ImmediateAndChargeFullPrice
 
+#pragma warning disable CS0618
             var updateParams = BillingFlowParams.SubscriptionUpdateParams.NewBuilder()
                 .SetOldPurchaseToken(purchaseTokenOfOriginalSubscription)
                 .SetSubscriptionReplacementMode((int)prorationMode)
                 .Build();
+#pragma warning restore CS0618
 
             var t = skuDetails.GetSubscriptionOfferDetails()?.FirstOrDefault()?.OfferToken;
 
