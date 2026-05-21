@@ -56,6 +56,21 @@ namespace Plugin.InAppBilling
 
         BillingClient BillingClient { get; set; }
         BillingClient.Builder BillingClientBuilder { get; set; }
+        sealed class ProductDetailsResponseListener : Java.Lang.Object, IProductDetailsResponseListener
+        {
+            readonly Action<BillingResult, QueryProductDetailsResult> handler;
+
+            public ProductDetailsResponseListener(Action<BillingResult, QueryProductDetailsResult> handler)
+            {
+                this.handler = handler;
+            }
+
+            public void OnProductDetailsResponse(BillingResult billingResult, QueryProductDetailsResult queryResult)
+            {
+                handler?.Invoke(billingResult, queryResult);
+            }
+        }
+
         /// <summary>
         /// Determines if it is connected to the backend actively (Android).
         /// </summary>
@@ -77,6 +92,7 @@ namespace Plugin.InAppBilling
             using var _ = cancellationToken.Register(() => tcsConnect.TrySetCanceled());
             BillingClientBuilder = NewBuilder(Context);
             BillingClientBuilder.SetListener(OnPurchasesUpdated);
+            BillingClientBuilder.EnableAutoServiceReconnection();
             if (enablePendingPurchases)
             {
                 var pendingParams = PendingPurchasesParams.NewBuilder().EnableOneTimeProducts().EnablePrepaidPlans().Build();
@@ -180,7 +196,7 @@ namespace Plugin.InAppBilling
 
             var skuDetailsParams = QueryProductDetailsParams.NewBuilder().SetProductList(productList);
 
-            var skuDetailsResult = await BillingClient.QueryProductDetailsAsync(skuDetailsParams.Build());
+            var skuDetailsResult = await QueryProductDetailsAsync(skuDetailsParams.Build(), cancellationToken);
 
             return skuDetailsResult.ProductDetailsList.Select(product => product.ToIAPProduct());
         }
@@ -236,7 +252,7 @@ namespace Plugin.InAppBilling
 
             var skuDetailsParams = QueryProductDetailsParams.NewBuilder().SetProductList(new[] { productList }).Build();
 
-            var skuDetailsResult = await BillingClient.QueryProductDetailsAsync(skuDetailsParams);
+            var skuDetailsResult = await QueryProductDetailsAsync(skuDetailsParams, cancellationToken);
 
             var skuDetails = skuDetailsResult.ProductDetailsList.FirstOrDefault() ?? throw new ArgumentException($"{newProductId} does not exist");
 
@@ -340,7 +356,7 @@ namespace Plugin.InAppBilling
 
             var skuDetailsParams = QueryProductDetailsParams.NewBuilder().SetProductList(new[] { productList });
 
-            var skuDetailsResult = await BillingClient.QueryProductDetailsAsync(skuDetailsParams.Build());
+            var skuDetailsResult = await QueryProductDetailsAsync(skuDetailsParams.Build(), cancellationToken);
 
             var skuDetails = skuDetailsResult.ProductDetailsList.FirstOrDefault() ?? throw new ArgumentException($"{productSku} does not exist");
             BillingFlowParams.ProductDetailsParams productDetailsParamsList;
@@ -447,6 +463,53 @@ namespace Plugin.InAppBilling
 
 
             return ParseBillingResult(result.BillingResult);
+        }
+
+        async Task<QueryProductDetailsResult> QueryProductDetailsAsync(QueryProductDetailsParams queryProductDetailsParams, CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource<(BillingResult billingResult, QueryProductDetailsResult queryResult)>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            using var registration = cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+            using var listener = new ProductDetailsResponseListener((billingResult, queryResult) =>
+                tcs.TrySetResult((billingResult, queryResult)));
+
+            BillingClient.QueryProductDetails(queryProductDetailsParams, listener);
+
+            var result = await tcs.Task.ConfigureAwait(false);
+            ParseProductDetailsResult(result.billingResult, result.queryResult);
+
+            return result.queryResult;
+        }
+
+        void ParseProductDetailsResult(BillingResult billingResult, QueryProductDetailsResult queryResult)
+        {
+            ParseBillingResult(billingResult, IgnoreInvalidProducts);
+
+            if (queryResult == null)
+                throw new InAppBillingPurchaseException(PurchaseError.GeneralError);
+
+            var unfetchedProducts = queryResult.UnfetchedProductList;
+            if (IgnoreInvalidProducts || unfetchedProducts == null || unfetchedProducts.Count == 0)
+                return;
+
+            var invalidProducts = unfetchedProducts
+                .Select(product => product.ProductId)
+                .Where(productId => !string.IsNullOrWhiteSpace(productId))
+                .ToArray();
+
+            var error = unfetchedProducts.Select(product => product.StatusCodeValue).FirstOrDefault() switch
+            {
+                UnfetchedProduct.StatusCode.InvalidProductIdFormat => PurchaseError.InvalidProduct,
+                UnfetchedProduct.StatusCode.ProductNotFound => PurchaseError.ItemUnavailable,
+                UnfetchedProduct.StatusCode.NoEligibleOffer => PurchaseError.ItemUnavailable,
+                _ => PurchaseError.GeneralError
+            };
+
+            throw new InAppBillingPurchaseException(
+                error,
+                $"Product details could not be fetched: {string.Join(", ", invalidProducts)}",
+                invalidProducts);
         }
 
         static bool ParseBillingResult(BillingResult result, bool ignoreInvalidProducts = false)
