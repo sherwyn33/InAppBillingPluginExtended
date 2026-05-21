@@ -56,6 +56,7 @@ namespace Plugin.InAppBilling
 
         BillingClient BillingClient { get; set; }
         BillingClient.Builder BillingClientBuilder { get; set; }
+        readonly SemaphoreSlim connectionSemaphore = new(1, 1);
         sealed class ProductDetailsResponseListener : Java.Lang.Object, IProductDetailsResponseListener
         {
             readonly Action<BillingResult, QueryProductDetailsResult> handler;
@@ -81,34 +82,51 @@ namespace Plugin.InAppBilling
         /// Connect to billing service
         /// </summary>
         /// <returns>If Success</returns>
-        public override Task<bool> ConnectAsync(bool enablePendingPurchases = true, CancellationToken cancellationToken = default)
+        public override async Task<bool> ConnectAsync(bool enablePendingPurchases = true, CancellationToken cancellationToken = default)
         {
-            tcsPurchase?.TrySetCanceled();
-            tcsPurchase = null;
+            if (BillingClient != null && IsConnected)
+                return true;
 
-            tcsConnect?.TrySetCanceled();
-            tcsConnect = new TaskCompletionSource<bool>();
-
-            using var _ = cancellationToken.Register(() => tcsConnect.TrySetCanceled());
-            BillingClientBuilder = NewBuilder(Context);
-            BillingClientBuilder.SetListener(OnPurchasesUpdated);
-            BillingClientBuilder.EnableAutoServiceReconnection();
-            if (enablePendingPurchases)
+            await connectionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                var pendingParams = PendingPurchasesParams.NewBuilder().EnableOneTimeProducts().EnablePrepaidPlans().Build();
-                BillingClient = BillingClientBuilder.EnablePendingPurchases(pendingParams).Build();
-            }
-            else
+                if (BillingClient != null && IsConnected)
+                    return true;
 
+                tcsPurchase?.TrySetCanceled();
+                tcsPurchase = null;
+
+                tcsConnect = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                using var _ = cancellationToken.Register(() => tcsConnect.TrySetCanceled(cancellationToken));
+                BillingClientBuilder?.Dispose();
+                BillingClient?.EndConnection();
+                BillingClient?.Dispose();
+
+                BillingClientBuilder = NewBuilder(Context);
+                BillingClientBuilder.SetListener(OnPurchasesUpdated);
+                BillingClientBuilder.EnableAutoServiceReconnection();
+                if (enablePendingPurchases)
+                {
+                    var pendingParams = PendingPurchasesParams.NewBuilder().EnableOneTimeProducts().EnablePrepaidPlans().Build();
+                    BillingClient = BillingClientBuilder.EnablePendingPurchases(pendingParams).Build();
+                }
+                else
+
+                {
+                    var pendingParams = PendingPurchasesParams.NewBuilder().EnableOneTimeProducts().Build();
+                    BillingClient = BillingClientBuilder.EnablePendingPurchases(pendingParams).Build();
+                }
+
+                BillingClient.StartConnection(OnSetupFinished, OnDisconnected);
+                // TODO: stop trying
+
+                return await tcsConnect.Task.ConfigureAwait(false);
+            }
+            finally
             {
-                var pendingParams = PendingPurchasesParams.NewBuilder().EnableOneTimeProducts().Build();
-                BillingClient = BillingClientBuilder.EnablePendingPurchases(pendingParams).Build();
+                connectionSemaphore.Release();
             }
-
-            BillingClient.StartConnection(OnSetupFinished, OnDisconnected);
-            // TODO: stop trying
-
-            return tcsConnect.Task;
 
             void OnSetupFinished(BillingResult billingResult)
             {
@@ -137,8 +155,9 @@ namespace Plugin.InAppBilling
         /// Disconnect from the billing service
         /// </summary>
         /// <returns>Task to disconnect</returns>
-        public override Task DisconnectAsync(CancellationToken cancellationToken)
+        public override async Task DisconnectAsync(CancellationToken cancellationToken)
         {
+            await connectionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 BillingClientBuilder?.Dispose();
@@ -152,8 +171,10 @@ namespace Plugin.InAppBilling
             {
                 System.Diagnostics.Debug.WriteLine($"Unable to disconnect: {ex.Message}");
             }
-
-            return Task.CompletedTask;
+            finally
+            {
+                connectionSemaphore.Release();
+            }
         }
 
         /// <summary>
