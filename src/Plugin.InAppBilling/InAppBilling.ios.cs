@@ -208,8 +208,10 @@ namespace Plugin.InAppBilling
             });
 		}
 
-		Task<IEnumerable<SKProduct>> GetProductAsync(string[] productId, CancellationToken cancellationToken)
+		async Task<IEnumerable<SKProduct>> GetProductAsync(string[] productId, CancellationToken cancellationToken)
 		{
+			cancellationToken.ThrowIfCancellationRequested();
+
 			var productIdentifiers = NSSet.MakeNSObjectSet<NSString>(productId.Select(i => new NSString(i)).ToArray());
 
 			var productRequestDelegate = new ProductRequestDelegate(IgnoreInvalidProducts);
@@ -219,10 +221,14 @@ namespace Plugin.InAppBilling
 			{
 				Delegate = productRequestDelegate // SKProductsRequestDelegate.ReceivedResponse
 			};
-            using var _ = cancellationToken.Register(() => productsRequest.Cancel());
+            using var _ = cancellationToken.Register(() =>
+            {
+                productsRequest.Cancel();
+                productRequestDelegate.Cancel(cancellationToken);
+            });
             productsRequest.Start();
 
-			return productRequestDelegate.WaitForResponse();
+			return await productRequestDelegate.WaitForResponse();
 		}
 
         /// <summary>
@@ -246,7 +252,7 @@ namespace Plugin.InAppBilling
 
 		async Task<SKPaymentTransaction[]> RestoreAsync(CancellationToken cancellationToken)
 		{
-			var tcsTransaction = new TaskCompletionSource<SKPaymentTransaction[]>();
+			var tcsTransaction = new TaskCompletionSource<SKPaymentTransaction[]>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			var allTransactions = new List<SKPaymentTransaction>();
 
@@ -268,7 +274,7 @@ namespace Plugin.InAppBilling
 
             try
             {
-                using var _ = cancellationToken.Register(() => tcsTransaction.TrySetCanceled());
+                using var _ = cancellationToken.Register(() => tcsTransaction.TrySetCanceled(cancellationToken));
                 paymentObserver.TransactionsRestored += handler;
 
 			    foreach (var trans in SKPaymentQueue.DefaultQueue.Transactions)
@@ -350,7 +356,7 @@ namespace Plugin.InAppBilling
 
 		async Task<SKPaymentTransaction> PurchaseAsync(string productId, ItemType itemType, string applicationUserName, CancellationToken cancellationToken)
 		{
-			var tcsTransaction = new TaskCompletionSource<SKPaymentTransaction>();
+			var tcsTransaction = new TaskCompletionSource<SKPaymentTransaction>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			var handler = new Action<SKPaymentTransaction, bool>((tran, success) =>
 			{
@@ -406,7 +412,7 @@ namespace Plugin.InAppBilling
 
             try
             {
-                using var _ = cancellationToken.Register(() => tcsTransaction.TrySetCanceled());
+                using var _ = cancellationToken.Register(() => tcsTransaction.TrySetCanceled(cancellationToken));
                 paymentObserver.TransactionCompleted += handler;
 
 			    var products = await GetProductAsync(new[] { productId }, cancellationToken);
@@ -642,15 +648,17 @@ namespace Plugin.InAppBilling
             this.ignoreInvalidProducts = ignoreInvalidProducts;
         }
 
-        readonly TaskCompletionSource<IEnumerable<SKProduct>> tcsResponse = new();
+        readonly TaskCompletionSource<IEnumerable<SKProduct>> tcsResponse = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		public Task<IEnumerable<SKProduct>> WaitForResponse() =>
 			tcsResponse.Task;
 
+        public void Cancel(CancellationToken cancellationToken) =>
+            tcsResponse.TrySetCanceled(cancellationToken);
 
 		[Export("request:didFailWithError:")]
 		public void RequestFailed(SKRequest request, NSError error) =>
-			tcsResponse.TrySetException(new InAppBillingPurchaseException(PurchaseError.ProductRequestFailed, error.LocalizedDescription));
+			tcsResponse.TrySetException(new InAppBillingPurchaseException(PurchaseError.ProductRequestFailed, error?.LocalizedDescription ?? "Product request failed"));
 
 
 		public void ReceivedResponse(SKProductsRequest request, SKProductsResponse response)
@@ -665,12 +673,7 @@ namespace Plugin.InAppBilling
                 }
             }
 
-			var product = response.Products;
-			if (product != null)
-			{
-				tcsResponse.TrySetResult(product);
-				return;
-			}
+			tcsResponse.TrySetResult(response.Products ?? Array.Empty<SKProduct>());
 		}
 	}
 
