@@ -82,6 +82,13 @@ echo "Validating package contents..."
 unzip -tq "${PACKAGES[0]}"
 unzip -tq "${SYMBOL_PACKAGES[0]}"
 
+WINDOWS_ASSEMBLY="lib/net10.0-windows10.0.19041.0/Plugin.InAppBilling.dll"
+if ! unzip -Z1 "${PACKAGES[0]}" | grep -Fxq "$WINDOWS_ASSEMBLY"; then
+  echo "Package is missing the staged Windows assembly: $WINDOWS_ASSEMBLY" >&2
+  echo "Run scripts/build-windows-package-files.ps1 on Windows and commit its output before publishing." >&2
+  exit 1
+fi
+
 echo "Package: ${PACKAGES[0]}"
 echo "Symbols: ${SYMBOL_PACKAGES[0]}"
 
