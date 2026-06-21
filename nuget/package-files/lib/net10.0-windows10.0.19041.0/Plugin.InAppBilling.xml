@@ -21,7 +21,7 @@
         </member>
         <member name="M:Plugin.InAppBilling.CrossInAppBilling.Dispose">
             <summary>
-            Dispose of everything
+            Dispose of everything 
             </summary>
         </member>
         <member name="T:Plugin.InAppBilling.BaseInAppBilling">
@@ -140,7 +140,7 @@
         </member>
         <member name="M:Plugin.InAppBilling.BaseInAppBilling.FinalizePurchaseOfProductAsync(System.String[],System.Threading.CancellationToken)">
              <summary>
-
+            
              </summary>
              <param name="productIds"></param>
              <returns></returns>
@@ -363,26 +363,26 @@
         </member>
         <member name="M:Plugin.InAppBilling.InAppBillingPurchaseException.#ctor(Plugin.InAppBilling.PurchaseError,System.Exception)">
             <summary>
-
+            
             </summary>
             <param name="error"></param>
             <param name="ex"></param>
         </member>
         <member name="M:Plugin.InAppBilling.InAppBillingPurchaseException.#ctor(Plugin.InAppBilling.PurchaseError)">
             <summary>
-
+            
             </summary>
             <param name="error"></param>
         </member>
         <member name="M:Plugin.InAppBilling.InAppBillingPurchaseException.#ctor(Plugin.InAppBilling.PurchaseError,System.String)">
             <summary>
-
+            
             </summary>
             <param name="error"></param>
         </member>
         <member name="M:Plugin.InAppBilling.InAppBillingPurchaseException.#ctor(Plugin.InAppBilling.PurchaseError,System.String,System.String[])">
             <summary>
-
+            
             </summary>
             <param name="error"></param>
         </member>
@@ -683,7 +683,7 @@
         </member>
         <member name="P:Plugin.InAppBilling.InAppBillingProductWindowsExtras.Keywords">
             <summary>
-            Gets the list of keywords associated with the add-on (also called an in-app product or IAP). These strings correspond to the value of the Keywords field in the properties page for the add-on in Partner Center.
+            Gets the list of keywords associated with the add-on (also called an in-app product or IAP). These strings correspond to the value of the Keywords field in the properties page for the add-on in Partner Center. 
             </summary>
         </member>
         <member name="T:Plugin.InAppBilling.InAppBillingProductAndroidExtras">
@@ -728,8 +728,8 @@
         </member>
         <member name="P:Plugin.InAppBilling.InAppBillingProduct.MicrosPrice">
             <summary>
-            Price in micro-units, where 1,000,000 micro-units equal one unit of the
-            currency. For example, if price is "€7.99", price_amount_micros is "7990000".
+            Price in micro-units, where 1,000,000 micro-units equal one unit of the 
+            currency. For example, if price is "€7.99", price_amount_micros is "7990000". 
             This value represents the localized, rounded price for a particular currency.
             </summary>
         </member>
@@ -865,12 +865,12 @@
         </member>
         <member name="F:Plugin.InAppBilling.ProductDiscountType.Introductory">
             <summary>
-
+            
             </summary>
         </member>
         <member name="F:Plugin.InAppBilling.ProductDiscountType.Subscription">
             <summary>
-
+            
             </summary>
         </member>
         <member name="F:Plugin.InAppBilling.ProductDiscountType.Unknown">
@@ -885,7 +885,7 @@
         </member>
         <member name="M:Plugin.InAppBilling.InAppBillingPurchase.#ctor">
             <summary>
-
+            
             </summary>
         </member>
         <member name="P:Plugin.InAppBilling.InAppBillingPurchase.Id">

@@ -73,11 +73,70 @@ namespace Plugin.InAppBilling
         public override async Task<IEnumerable<InAppBillingPurchase>> GetPurchasesAsync(ItemType itemType, CancellationToken cancellationToken = default)
         {
             var context = GetStoreContext();
-            var results = await context.GetAppLicenseAsync();
+            return await GetOwnedPurchasesAsync(context, itemType);
+        }
 
-            return results.AddOnLicenses
-                .Where(l => l.Value.IsActive)
-                .Select(item => item.Value.ToInAppBillingPurchase()).ToList();
+        private static async Task<List<InAppBillingPurchase>> GetOwnedPurchasesAsync(StoreContext context, ItemType itemType)
+        {
+            var purchases = new List<InAppBillingPurchase>();
+            Exception appLicenseError = null;
+            Exception collectionError = null;
+
+            try
+            {
+                var appLicense = await context.GetAppLicenseAsync();
+                purchases.AddRange(appLicense.AddOnLicenses
+                    .Where(entry => entry.Value.IsActive &&
+                        (entry.Value.ExpirationDate <= DateTimeOffset.MinValue ||
+                         entry.Value.ExpirationDate > DateTimeOffset.UtcNow))
+                    .Select(entry => entry.Value.ToInAppBillingPurchase()));
+            }
+            catch (Exception ex)
+            {
+                appLicenseError = ex;
+            }
+
+            try
+            {
+                var collectionResult = await context.GetUserCollectionAsync(itemType.ToProductFilter());
+
+                foreach (var entry in collectionResult.Products)
+                {
+                    purchases.AddRange(entry.Value.ToCollectionPurchases());
+                }
+            }
+            catch (Exception ex)
+            {
+                collectionError = ex;
+            }
+
+            if (appLicenseError != null && collectionError != null)
+                throw appLicenseError;
+
+            return purchases
+                .Where(IsActiveWindowsPurchase)
+                .GroupBy(purchase => GetProductStoreId(purchase.ProductId), StringComparer.OrdinalIgnoreCase)
+                .Select(group => group
+                    .OrderByDescending(purchase => purchase.ExpirationDate)
+                    .ThenByDescending(purchase => purchase.TransactionDateUtc)
+                    .First())
+                .ToList();
+        }
+
+        private static bool IsActiveWindowsPurchase(InAppBillingPurchase purchase)
+        {
+            return purchase.State == PurchaseState.Purchased &&
+                   (purchase.ExpirationDate <= DateTimeOffset.MinValue ||
+                    purchase.ExpirationDate > DateTimeOffset.UtcNow);
+        }
+
+        private static string GetProductStoreId(string storeId)
+        {
+            if (string.IsNullOrWhiteSpace(storeId))
+                return string.Empty;
+
+            var separatorIndex = storeId.IndexOf('/');
+            return separatorIndex < 0 ? storeId : storeId.Substring(0, separatorIndex);
         }
 
         public override async Task<InAppBillingPurchase> PurchaseAsync(string productId, ItemType itemType, string obfuscatedAccountId = null, string obfuscatedProfileId = null, string subOfferToken = null, CancellationToken cancellationToken = default)
@@ -91,14 +150,10 @@ namespace Plugin.InAppBilling
             }
             else if (itemType == ItemType.Subscription)
             {
-                var userOwnsSubscription = await CheckIfUserHasSubscriptionAsync(context, productId);
-                if (userOwnsSubscription)
+                var existingPurchase = await GetExistingSubscriptionPurchase(context, productId);
+                if (existingPurchase != null)
                 {
-                    var existingPurchase = await GetExistingSubscriptionPurchase(context, productId);
-                    if (existingPurchase != null)
-                        return existingPurchase;
-
-                    throw new InAppBillingPurchaseException(PurchaseError.AlreadyOwned, "User already has an active subscription");
+                    return existingPurchase;
                 }
 
                 var productResult = await context.GetStoreProductsAsync(new string[] { "Durable" }, new string[] { productId });
@@ -157,57 +212,31 @@ namespace Plugin.InAppBilling
 
         private async Task<InAppBillingPurchase> GetExistingSubscriptionPurchase(StoreContext context, string productId)
         {
+            // Query the exact configured product only. This keeps the Windows
+            // purchase check scoped to the requested Midify product instead of
+            // depending on the broader collection APIs.
             try
             {
-                var appLicense = await context.GetAppLicenseAsync();
+                var productResult = await context.GetStoreProductsAsync(
+                    new[] { "Durable" },
+                    new[] { productId });
 
-                foreach (var addOnLicense in appLicense.AddOnLicenses)
-                {
-                    var license = addOnLicense.Value;
-                    if (license.SkuStoreId.StartsWith(productId, StringComparison.OrdinalIgnoreCase) && license.IsActive)
-                    {
-                        return new InAppBillingPurchase
-                        {
-                            ProductId = productId,
-                            State = PurchaseState.Purchased,
-                            TransactionIdentifier = license.InAppOfferToken,
-                            ExpirationDate = license.ExpirationDate,
-                            TransactionDateUtc = DateTime.UtcNow, // Windows doesn't provide original purchase date
-                            OriginalJson = license.ExtendedJsonData
-                        };
-                    }
-                }
+                var targetedPurchase = productResult.Products.Values
+                    .SelectMany(product => product.ToCollectionPurchases())
+                    .Where(purchase => string.Equals(
+                        GetProductStoreId(purchase.ProductId),
+                        GetProductStoreId(productId),
+                        StringComparison.OrdinalIgnoreCase))
+                    .Where(IsActiveWindowsPurchase)
+                    .OrderByDescending(purchase => purchase.ExpirationDate)
+                    .FirstOrDefault();
+                if (targetedPurchase != null)
+                    return targetedPurchase;
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"Error getting existing subscription: {ex.Message}");
             }
             return null;
-        }
-
-        private async Task<bool> CheckIfUserHasSubscriptionAsync(StoreContext context, string subscriptionStoreId)
-        {
-            try
-            {
-                var appLicense = await context.GetAppLicenseAsync();
-
-                foreach (var addOnLicense in appLicense.AddOnLicenses)
-                {
-                    var license = addOnLicense.Value;
-                    if (license.SkuStoreId.StartsWith(subscriptionStoreId, StringComparison.OrdinalIgnoreCase) && license.IsActive)
-                    {
-                        if (license.ExpirationDate == null || license.ExpirationDate > DateTimeOffset.UtcNow)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error checking subscription status: {ex.Message}");
-            }
-            return false;
         }
     }
 
@@ -240,6 +269,33 @@ namespace Plugin.InAppBilling
                 ExpirationDate = license.ExpirationDate,
                 OriginalJson = license.ExtendedJsonData
             };
+        }
+
+        public static IEnumerable<InAppBillingPurchase> ToCollectionPurchases(this StoreProduct product)
+        {
+            if (product.Skus == null)
+                return Enumerable.Empty<InAppBillingPurchase>();
+
+            var now = DateTimeOffset.UtcNow;
+            return product.Skus
+                .Where(sku => sku.IsInUserCollection && sku.CollectionData != null)
+                .Where(sku =>
+                    (sku.CollectionData.StartDate <= DateTimeOffset.MinValue || sku.CollectionData.StartDate <= now) &&
+                    (sku.CollectionData.EndDate <= DateTimeOffset.MinValue || sku.CollectionData.EndDate > now))
+                .Select(sku => new InAppBillingPurchase
+                {
+                    ProductId = product.StoreId,
+                    State = PurchaseState.Purchased,
+                    TransactionIdentifier = sku.StoreId,
+                    PurchaseToken = sku.StoreId,
+                    InAppOfferToken = product.InAppOfferToken,
+                    TransactionDateUtc = sku.CollectionData.AcquiredDate <= DateTimeOffset.MinValue
+                        ? DateTime.UtcNow
+                        : sku.CollectionData.AcquiredDate.UtcDateTime,
+                    ExpirationDate = sku.CollectionData.EndDate,
+                    OriginalJson = sku.CollectionData.ExtendedJsonData
+                })
+                .ToList();
         }
 
         public static InAppBillingProduct ToInAppBillingProduct(this StoreProduct product)
