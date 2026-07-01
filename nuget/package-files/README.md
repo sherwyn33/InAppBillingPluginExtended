@@ -4,7 +4,7 @@ The final NuGet package is built on macOS, but macOS cannot compile the Windows
 target framework. Run the following command on Windows before the Mac release:
 
 ```powershell
-.\scripts\build-windows-package-files.ps1 -Version 10.0.4
+.\scripts\build-windows-package-files.ps1 -Version 10.0.5
 ```
 
 Commit the resulting DLL and XML file under
